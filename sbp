@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFRS 2 Advanced Simulator - Noraida Saidi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 p-2 md:p-6 font-sans text-slate-800">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <div class="bg-emerald-900 text-white p-6 rounded-xl shadow-lg flex justify-between items-center border-b-4 border-emerald-500">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight uppercase">MFRS 2: Share-based Payment</h1>
+                <p class="text-sm opacity-90 mt-1 font-medium">Teaching Innovation: FAR570 Financial Reporting 4</p>
+                <p class="text-xs opacity-70 italic font-mono uppercase tracking-tighter">Lecturer: Pn. Noraida Saidi</p>
+            </div>
+            <div class="text-right border-l border-emerald-700 pl-6 hidden md:block">
+                <p class="text-[10px] uppercase font-bold text-emerald-300 tracking-widest leading-tight">Interactive Virtual<br>Learning Tool</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+                    <h3 class="font-bold text-emerald-900 border-b pb-2 mb-4">1. Grant Parameters</h3>
+                    
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <label class="font-bold text-slate-500 uppercase">Settlement Type</label>
+                            <select id="type" onchange="updateSim()" class="w-full mt-1 p-2 bg-slate-50 border rounded outline-none focus:ring-2 focus:ring-emerald-400">
+                                <option value="equity">Equity-Settled (Share Options)</option>
+                                <option value="cash">Cash-Settled (SARs)</option>
+                                <option value="choice">Choice of Settlement (Compound)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="font-bold text-slate-500 uppercase text-[9px]">Service Years: <span id="val-vp" class="text-emerald-600">3</span></label>
+                                <input type="range" id="vp" min="1" max="5" value="3" oninput="updateSim()" class="w-full accent-emerald-600">
+                            </div>
+                            <div>
+                                <label class="font-bold text-slate-500 uppercase text-[9px]">FV Grant: RM<span id="val-fv" class="text-emerald-600">30</span></label>
+                                <input type="range" id="fv" min="10" max="100" value="30" oninput="updateSim()" class="w-full accent-emerald-600">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-500 uppercase">Vesting Condition</label>
+                            <select id="condition" onchange="updateSim()" class="w-full mt-1 p-2 bg-slate-50 border rounded outline-none focus:ring-2 focus:ring-emerald-400">
+                                <option value="service">Service Only</option>
+                                <option value="non-market">Performance (Non-Market - e.g. Profit)</option>
+                                <option value="market">Performance (Market - e.g. Share Price)</option>
+                            </select>
+                        </div>
+
+                        <div id="target-ui" class="hidden p-3 bg-amber-50 border border-amber-200 rounded">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="targetMet" checked onchange="updateSim()" class="w-4 h-4 accent-amber-600">
+                                <span class="text-[10px] font-bold text-amber-800 uppercase italic">Will target be met?</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-500 uppercase block mb-1">Year-End Share Price: RM<span id="val-mp">50</span></label>
+                            <input type="range" id="mp" min="10" max="150" value="50" oninput="updateSim()" class="w-full h-1.5 bg-slate-200 rounded-lg accent-orange-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 text-white p-5 rounded-xl shadow-md border-t-4 border-blue-400">
+                    <h3 class="font-bold text-blue-400 mb-2 text-sm uppercase">2. Settlement Date Action</h3>
+                    <p class="text-[10px] opacity-70 mb-3 italic">Choose what happens at the end of the vesting period:</p>
+                    <select id="settlementAction" onchange="updateSim()" class="w-full p-2 bg-slate-700 border-none rounded text-xs">
+                        <option value="pending text-gray-400">-- Select Action --</option>
+                        <option value="settle_equity">Settle via Equity (Issue Shares)</option>
+                        <option value="settle_cash">Settle via Cash (Payment)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-4">
+                
+                <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 flex justify-between">
+                        Journal Entries <span id="journal-note" class="text-emerald-600 font-mono"></span>
+                    </h3>
+                    <div id="journal-container" class="font-mono text-xs bg-slate-900 text-emerald-400 p-4 rounded-lg space-y-1 overflow-x-auto min-h-[100px]">
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-red-500">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase mb-3">SOPL Extract (Current Year)</h4>
+                        <div class="flex justify-between items-center text-sm border-b py-2">
+                            <span>Staff Costs (MFRS 2)</span>
+                            <span id="sopl-val" class="text-red-600 font-bold font-mono">(RM 0)</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-emerald-500">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase mb-3 text-right">SOFP Extract (Cumulative)</h4>
+                        <div class="text-xs space-y-2">
+                            <div class="flex justify-between font-mono">
+                                <span>Equity: SBP Reserve</span>
+                                <span id="sofp-equity" class="text-emerald-700 font-bold">RM 0</span>
+                            </div>
+                            <div class="flex justify-between font-mono">
+                                <span>Liab: SBP Liability</span>
+                                <span id="sofp-liab" class="text-orange-600 font-bold">RM 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settlement-logic-card" class="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                    <h4 class="text-xs font-bold text-indigo-900 uppercase mb-2">Accounting Treatment at Settlement</h4>
+                    <p id="settlement-text" class="text-[11px] text-indigo-700 leading-relaxed italic">Vesting in progress...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateSim() {
+            const type = document.getElementById('type').value;
+            const vp = parseInt(document.getElementById('vp').value);
+            const fvGrant = parseFloat(document.getElementById('fv').value);
+            const condition = document.getElementById('condition').value;
+            const targetMet = document.getElementById('targetMet').checked;
+            const price = parseFloat(document.getElementById('mp').value);
+            const action = document.getElementById('settlementAction').value;
+
+            // Labels update
+            document.getElementById('val-vp').innerText = vp;
+            document.getElementById('val-fv').innerText = fvGrant;
+            document.getElementById('val-mp').innerText = price;
+            document.getElementById('target-ui').className = (condition !== 'service') ? 'block p-3 bg-amber-50 border border-amber-200 rounded mt-2' : 'hidden';
+
+            // Logic Core
+            let expense = 0;
+            let totalCumulative = 0;
+            let n = 1000; // Units granted
+
+            // Handling Performance Logic (MFRS 2.19 & 2.21)
+            let recognitionFactor = 1;
+            if(condition === 'non-market' && !targetMet) recognitionFactor = 0;
+            if(condition === 'market' && !targetMet) recognitionFactor = 1; // Market conditions recognized regardless of outcome
+
+            const valuationPrice = (type === 'equity') ? fvGrant : price;
+            totalCumulative = (n * valuationPrice * recognitionFactor);
+            expense = (1/vp) * totalCumulative;
+
+            // Update Reports
+            document.getElementById('sopl-val').innerText = `(RM ${Math.round(expense).toLocaleString()})`;
+            document.getElementById('sofp-equity').innerText = (type === 'equity' || type === 'choice') ? `RM ${Math.round(totalCumulative).toLocaleString()}` : "RM 0";
+            document.getElementById('sofp-liab').innerText = (type === 'cash') ? `RM ${Math.round(totalCumulative).toLocaleString()}` : "RM 0";
+
+            // Journal Entries
+            let journalHtml = "";
+            if (type === 'equity') {
+                journalHtml = `Dr Staff Cost (SOPL) RM ${Math.round(expense).toLocaleString()}<br>Cr SBP Reserve (Equity) RM ${Math.round(expense).toLocaleString()}`;
+            } else if (type === 'cash') {
+                journalHtml = `Dr Staff Cost (SOPL) RM ${Math.round(expense).toLocaleString()}<br>Cr SBP Liability RM ${Math.round(expense).toLocaleString()}`;
+            } else {
+                journalHtml = `Dr Staff Cost (SOPL) [Compound Allocation]<br>Cr SBP Reserve (Equity Component)<br>Cr SBP Liability (Cash Component)`;
+            }
+            
+            // Settlement Logic
+            let settleText = "Vesting in progress. Select an action at settlement date.";
+            if(action === 'settle_equity') {
+                settleText = "<b>Settlement:</b> Liability is reclassified to Equity. Shares issued. No impact on P&L except if cash-settled choice exceeded original liability.";
+                journalHtml += `<br><br>--- AT SETTLEMENT ---<br>Dr SBP Reserve / Liability<br>Cr Share Capital`;
+            } else if(action === 'settle_cash') {
+                settleText = "<b>Settlement:</b> Liability is extinguished with cash payment. Equity reserve remains in equity or moved to Retained Earnings (MFRS 2).";
+                journalHtml += `<br><br>--- AT SETTLEMENT ---<br>Dr SBP Liability<br>Cr Cash`;
+            }
+
+            document.getElementById('journal-container').innerHTML = journalHtml;
+            document.getElementById('settlement-text').innerHTML = settleText;
+        }
+
+        window.onload = updateSim;
+    </script>
+</body>
+</html>
